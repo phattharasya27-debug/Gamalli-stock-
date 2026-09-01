@@ -124,9 +124,10 @@ label{
 
       <div style="height:10px"></div>
 
-      <button class="secondary" style="width:100%" onclick="register()">
-        สมัครสมาชิก
-      </button>
+      <button type="button" class="secondary" style="width:100%" onclick="register()">
+  สมัครสมาชิก
+</button>
+     
     </div>
 
   </section>
@@ -249,137 +250,54 @@ async function register(){
     document.getElementById("password").value;
 
   if(!email || !password){
-    message("loginMessage","กรุณากรอก Email และ Password");
+    message(
+      "loginMessage",
+      "กรุณากรอก Email และ Password"
+    );
     return;
   }
 
   if(password.length < 6){
-    message("loginMessage","Password ต้องมีอย่างน้อย 6 ตัวอักษร");
-    return;
-  }
-
-  const {error} =
-    await supabaseClient.auth.signUp({
-      email,
-      password
-    });
-
-  if(error){
-    message("loginMessage",error.message);
-    return;
-  }
-
-  message(
-    "loginMessage",
-    "สมัครสมาชิกเรียบร้อยแล้ว กรุณาตรวจสอบอีเมลถ้าระบบร้องขอ"
-  );
-}
-
-
-// -----------------------------
-// LOGOUT
-// -----------------------------
-
-async function logout(){
-
-  await supabaseClient.auth.signOut();
-
-  document.getElementById("stockPage")
-    .classList.add("hidden");
-
-  document.getElementById("loginPage")
-    .classList.remove("hidden");
-}
-
-
-// -----------------------------
-// SHOW STOCK
-// -----------------------------
-
-async function showStock(){
-
-  document.getElementById("loginPage")
-    .classList.add("hidden");
-
-  document.getElementById("stockPage")
-    .classList.remove("hidden");
-
-  await loadProducts();
-}
-
-
-// -----------------------------
-// LOAD PRODUCTS
-// -----------------------------
-
-async function loadProducts(){
-
-  const {data,error} =
-    await supabaseClient
-      .from("stock_items")
-      .select("*")
-      .order("id",{ascending:false});
-
-  if(error){
     message(
-      "appMessage",
-      "ไม่สามารถโหลดสินค้าได้: " + error.message
+      "loginMessage",
+      "Password ต้องมีอย่างน้อย 6 ตัวอักษร"
     );
     return;
   }
 
-  products=data || [];
+  try {
 
-  renderProducts();
+    const { data, error } =
+      await supabaseClient.auth.signUp({
+        email: email,
+        password: password
+      });
+
+    if(error){
+      console.error("REGISTER ERROR:", error);
+
+      message(
+        "loginMessage",
+        "สมัครสมาชิกไม่สำเร็จ: " + error.message
+      );
+
+      return;
+    }
+
+    console.log("REGISTER SUCCESS:", data);
+
+    message(
+      "loginMessage",
+      "สมัครสมาชิกสำเร็จแล้ว กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี"
+    );
+
+  } catch(err){
+
+    console.error("REGISTER EXCEPTION:", err);
+
+    message(
+      "loginMessage",
+      "เกิดข้อผิดพลาด: " + err.message
+    );
+  }
 }
-
-
-// -----------------------------
-// RENDER
-// -----------------------------
-
-function renderProducts(){
-
-  const box =
-    document.getElementById("products");
-
-  const search =
-    document.getElementById("search")
-      .value
-      .toLowerCase();
-
-  const filtered =
-    products.filter(p =>
-      String(p.name || "")
-        .toLowerCase()
-        .includes(search)
-      ||
-      String(p.sku || "")
-        .toLowerCase()
-        .includes(search)
-    );
-
-  if(filtered.length===0){
-
-    box.innerHTML =
-      `<div class="card">ยังไม่มีสินค้า</div>`;
-
-    return;
-  }
-
-  box.innerHTML =
-    filtered.map(p => {
-
-      const qty =
-        Number(p.quantity || 0);
-
-      let cls="ok";
-
-      if(qty===0) cls="out";
-      else if(qty<=5) cls="low";
-
-      return `
-
-      <div class="product">
-
-        <div class="product
